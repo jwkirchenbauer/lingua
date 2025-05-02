@@ -39,16 +39,16 @@ from lingua.float8 import convert_linears_to_fp8
 
 logger = logging.getLogger()
 
-# for selective AC
-default_no_recompute_ops = {
-    torch.ops.aten.mm.default,
-    torch.ops.aten._scaled_mm.default,
-    torch.ops.aten._scaled_dot_product_efficient_attention.default,
-    torch.ops.aten._scaled_dot_product_flash_attention.default,
-    torch.ops.c10d_functional.reduce_scatter_tensor.default,
-    torch.ops.xformers_flash.flash_fwd.default,
-    torch.ops.xformers.efficient_attention_forward_cutlass.default,
-}
+# # for selective AC
+# default_no_recompute_ops = {
+#     torch.ops.aten.mm.default,
+#     torch.ops.aten._scaled_mm.default,
+#     torch.ops.aten._scaled_dot_product_efficient_attention.default,
+#     torch.ops.aten._scaled_dot_product_flash_attention.default,
+#     torch.ops.c10d_functional.reduce_scatter_tensor.default,
+#     torch.ops.xformers_flash.flash_fwd.default,
+#     torch.ops.xformers.efficient_attention_forward_cutlass.default,
+# }
 
 
 @dataclass
@@ -114,6 +114,8 @@ def get_device_mesh(distributed_args: DistributedArgs):
         names.append("tp")
     dims = tuple(dims)
     names = tuple(names)
+
+    print(f"Creating device mesh with dims {dims} and names {names}")
 
     return init_device_mesh("cuda", mesh_shape=dims, mesh_dim_names=names)
 
@@ -293,17 +295,17 @@ def default_fsdp_grouping_plan(n_layers: int) -> List[Tuple[str, bool]]:
     return [(f"layers.{i}", i < n_layers - 1) for i in range(n_layers)]
 
 
-def get_default_policy(no_recompute_ops=None):
-    no_recompute_ops = no_recompute_ops or default_no_recompute_ops
+# def get_default_policy(no_recompute_ops=None):
+#     no_recompute_ops = no_recompute_ops or default_no_recompute_ops
 
-    def default_policy(ctx, func, *args, **kwargs):
-        return (
-            CheckpointPolicy.MUST_SAVE
-            if func in no_recompute_ops
-            else CheckpointPolicy.PREFER_RECOMPUTE
-        )
+#     def default_policy(ctx, func, *args, **kwargs):
+#         return (
+#             CheckpointPolicy.MUST_SAVE
+#             if func in no_recompute_ops
+#             else CheckpointPolicy.PREFER_RECOMPUTE
+#         )
 
-    return default_policy
+#     return default_policy
 
 
 @torch.no_grad()
@@ -457,6 +459,7 @@ def parallelize_model(
         raise ValueError(f"Invalid fsdp_type: {distributed_args.fsdp_type}")
 
     if distributed_args.selective_activation_checkpointing:
+        raise NotImplementedError(f"This is now broken by commenting out above stuff.")
         model = checkpoint_wrapper(
             model,
             context_fn=partial(
