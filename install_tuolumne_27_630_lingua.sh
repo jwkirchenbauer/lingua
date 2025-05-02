@@ -3,7 +3,7 @@ CURR_REPO=$(pwd)
 
 # modify the installation path and env name if you want
 INSTALLDIR=${WRKSPC}
-ENV_NAME="tuolumne_conda_28_630_lingua"
+ENV_NAME="tuolumne_conda_27_630_lingua"
 
 cd ${INSTALLDIR}
 
@@ -30,16 +30,16 @@ module load gcc-native/12.2
 ######### COMPILE PIP PACKAGES ########################
 
 # pytorch and core reqs
-MAX_JOBS=48 PYTORCH_ROCM_ARCH='gfx942' GPU_ARCHS='gfx942' pip install --pre torch==2.8.0.dev20250401+rocm6.3 --index-url https://download.pytorch.org/whl/nightly/rocm6.3
+MAX_JOBS=48 PYTORCH_ROCM_ARCH='gfx942' GPU_ARCHS='gfx942' pip install torch==2.7.0 --index-url https://download.pytorch.org/whl/rocm6.3
 pip install ninja packaging numpy
 
 cd ${INSTALLDIR}
-git clone https://github.com/ROCm/xformers.git xformers_28_630_lingua
-cd xformers_28_630_lingua
+git clone https://github.com/ROCm/xformers.git xformers_27_630_lingua
+cd xformers_27_630_lingua
 git submodule update --init --recursive
 MAX_JOBS=48 PYTORCH_ROCM_ARCH=gfx942 python setup.py install
 cd ${INSTALLDIR}
-rm -rf xformers_28_630_lingua
+rm -rf xformers_27_630_lingua
 
 cd "${CURR_REPO}"
 MAX_JOBS=48 PYTORCH_ROCM_ARCH='gfx942' GPU_ARCHS='gfx942' pip install -r requirements.txt
