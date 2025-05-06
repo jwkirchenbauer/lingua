@@ -99,6 +99,7 @@ class LMTransformer(BaseTransformer):
         tok_idx: Optional[torch.Tensor] = None,
         mask: Optional[Union[BlockMask, AttentionBias, torch.Tensor, str]] = None,
         attn_impl: str = "sdpa",
+        return_logits: bool = False,
     ):
         bsz, seqlen = token_values.shape
 
@@ -114,6 +115,8 @@ class LMTransformer(BaseTransformer):
 
         logits = self.output(self.norm(h))
         if target is not None:
+            if return_logits:
+                return cross_entropy(logits, target), logits
             return cross_entropy(logits, target)
         else:
             return logits

@@ -273,7 +273,7 @@ class CheckpointManager:
         # If none of those are available don't do anything
         if path is None:
             # If no checkpoints exist do nothing
-            return
+            return None
 
         # Only load train state if it's provided, the files exist and we're not loading from init path
         train_state_name = TRAIN_STATE_NAME.format(dp_rank)
@@ -300,6 +300,8 @@ class CheckpointManager:
             optim_state_dict=state_dict["optim"],
         )
         logger.info("Model and optim reloaded")
+
+        return path
     
     @classmethod
     def instantiate_and_make_dir(cls, args: CheckpointArgs):

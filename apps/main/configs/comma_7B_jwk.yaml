@@ -3,16 +3,17 @@
 # python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
 # --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
 # --rccl_mode=rdzv \
-# --qos=pdebug \
+# --qos=pbatch \
 # --bank=guests \
 # --rocm_version=6.3.0 \
 # --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
 # --run_name=lingua_test \
 # --nodes=8 \
-# --minutes=60 \
+# --minutes=59 \
 # --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test data.batch_size=4 grad_acc_steps=4 profiling.run=False'
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test data.batch_size=2 grad_acc_steps=1 distributed.dp_shard=1 profiling.run=False optim.lr=0.000001 optim.lr_min_ratio=0.0000001 optim.scheduler=linear optim.warmup=100 steps=200 checkpoint.init_ckpt_path=/p/vast1/pretrain/models/comma-v0.1/checkpoints/0000500000/dcp'
 
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test data.batch_size=2 grad_acc_steps=1 distributed.dp_shard=1 profiling.run=False'
 # --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test data.batch_size=4 profiling.run=False'
 # --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test profiling.run=False'
 # --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test distributed.dp_replicate=2 distributed.dp_shard=4'
