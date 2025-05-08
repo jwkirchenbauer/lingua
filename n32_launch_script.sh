@@ -25,15 +25,15 @@ torchrun-hpc \
         apps/main/train.py \
             config=apps/main/configs/comma_7B_brb.yaml \
             data.batch_size=4
-:'
-flux run -N 32 -o fastload=on \
-    torchrun \
-        --nnodes 32 \
-        --nproc_per_node 4 \
-        --rdzv_id $RANDOM \
-        --rdzv_backend c10d \
-        --rdzv_endpoint $head_node_ip:29501 \
-        -m apps.main.train \
-            config=apps/main/configs/comma_7B_brb_32N.yaml
-'
+# :'
+# flux run -N 32 -o fastload=on \
+#     torchrun \
+#         --nnodes 32 \
+#         --nproc_per_node 4 \
+#         --rdzv_id $RANDOM \
+#         --rdzv_backend c10d \
+#         --rdzv_endpoint $head_node_ip:29501 \
+#         -m apps.main.train \
+#             config=apps/main/configs/comma_7B_brb_32N.yaml
+# '
 echo Done

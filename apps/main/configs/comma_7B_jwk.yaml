@@ -1,26 +1,25 @@
-# python -m lingua.stool config=apps/main/configs/llama2_7B.yaml nodes=32 account=fair_amaia_cw_codegen qos=lowest
-# torchrun --nproc-per-node 4 -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml
 # python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
 # --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
-# --rccl_mode=rdzv \
-# --qos=pdebug \
-# --bank=guests \
+# --rccl_mode=rdzv-lbann \
+# --qos=pflask \
+# --bank=flask \
 # --rocm_version=6.3.0 \
 # --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
-# --run_name=lingua_test \
-# --nodes=8 \
-# --minutes=60 \
+# --run_name=prod_lingua_64N \
+# --nodes=64 \
+# --minutes=20 \
 # --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test data.batch_size=4 grad_acc_steps=4 profiling.run=False'
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test data.batch_size=4 grad_acc_steps=2 profiling.run=False' \
 
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test data.batch_size=4 profiling.run=False'
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test profiling.run=False'
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test distributed.dp_replicate=2 distributed.dp_shard=4'
+# --dryrun \
 
+# new 64N prod step math
+# ((N*4)*mbsz*acc)*seq_len)*125000 = ((64*4)*4*2)*4096)*125000 = 1,048,576,000,000
+# name: "comma_v0p1_yolooooo"
 
 dump_dir: /p/lustre5/kirchenb/common-pile-root/lingua/output
-name: "comma_v0p1_yolooooo"
-steps: 500_000
+name: "comma_v0p1_amd_wbsz8M"
+steps: 125_000
 grad_acc_steps: 4
 
 seed: 777
