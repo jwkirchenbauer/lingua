@@ -231,7 +231,8 @@ def train(args: TrainArgs):
         init_logger(Path(args.dump_dir) / "train.log")
         init_signal_handler(set_preemption_flag)  # For handling preemption signals.
         setup_env(args.env)
-        setup_torch_distributed(args.distributed)
+        if not torch.distributed.is_initialized():
+            setup_torch_distributed(args.distributed)
         world_mesh = get_device_mesh(args.distributed)
         logger.info(f"Starting job: {args.name}")
 
