@@ -35,7 +35,7 @@ from torch.utils.module_tracker import ModuleTracker
 from torch.fx.operator_schemas import normalize_function
 from torch.nn.attention import sdpa_kernel, SDPBackend
 
-from xformers.ops import fmha
+#from xformers.ops import fmha
 
 
 @torch.library.custom_op("torchprobe::log", mutates_args=(), device_types=None)

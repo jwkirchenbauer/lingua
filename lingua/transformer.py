@@ -7,7 +7,7 @@ from typing import Optional, Union, Tuple
 import torch
 from torch import nn
 from torch.nn import functional as F
-from xformers.ops import fmha, AttentionBias
+#from xformers.ops import fmha, AttentionBias
 from torch.nn.attention.flex_attention import (
     BlockMask,
     flex_attention,
@@ -349,7 +349,7 @@ class Attention(nn.Module):
         x: torch.Tensor,
         freq_cis: torch.Tensor,
         tok_idx: Optional[torch.Tensor] = None,
-        mask: Optional[Union[BlockMask, AttentionBias, str]] = None,
+        mask: Optional[Union[BlockMask, str]] = None,
         attn_impl: str = "sdpa",
     ) -> torch.Tensor:
         # B S D
@@ -528,7 +528,7 @@ class TransformerBlock(nn.Module):
         x: torch.Tensor,
         freq_cis: torch.Tensor,
         tok_idx: Optional[torch.Tensor] = None,
-        mask: Optional[Union[BlockMask, AttentionBias, str]] = None,
+        mask: Optional[Union[BlockMask, str]] = None,
         attn_impl: str = "sdpa",
     ) -> torch.Tensor:
 
@@ -571,7 +571,7 @@ class BaseTransformer(nn.Module):
         self,
         h,
         tok_idx: Optional[torch.Tensor] = None,
-        mask: Optional[Union[BlockMask, AttentionBias, str]] = None,
+        mask: Optional[Union[BlockMask, str]] = None,
         attn_impl: str = "sdpa",
     ):
 
