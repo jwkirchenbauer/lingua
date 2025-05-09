@@ -5,17 +5,31 @@
 # --bank=flask \
 # --rocm_version=6.3.0 \
 # --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_32N \
+# --nodes=32 \
+# --minutes=2880 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_32N data.batch_size=4 grad_acc_steps=4 profiling.run=False' \
+
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pflask \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
 # --run_name=prod_lingua_64N \
 # --nodes=64 \
-# --minutes=20 \
+# --minutes=2880 \
 # --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/lingua_test data.batch_size=4 grad_acc_steps=2 profiling.run=False' \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_64N data.batch_size=4 grad_acc_steps=2 profiling.run=False' \
 
 # --dryrun \
 
-# new 64N prod step math
-# ((N*4)*mbsz*acc)*seq_len)*125000 = ((64*4)*4*2)*4096)*125000 = 1,048,576,000,000
-# name: "comma_v0p1_yolooooo"
+# new 32N or 64N prod step math
+# ((N*4)*mbsz*acc)*seq_len)*125000 
+#   = ((32*4)*4*4)*4096)*125000 = 1,048,576,000,000
+#   = ((64*4)*4*2)*4096)*125000 = 1,048,576,000,000
 
 dump_dir: /p/lustre5/kirchenb/common-pile-root/lingua/output
 name: "comma_v0p1_amd_wbsz8M"

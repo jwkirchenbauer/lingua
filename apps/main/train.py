@@ -137,7 +137,9 @@ def validate_train_args(args: TrainArgs, output_size: int):
     assert args.dump_dir, "Dump dir not set"
 
     if args.checkpoint.path is None:
-        logger.info(f"Setting checkpoint path to {str(Path(args.dump_dir) / 'checkpoints')}")
+        logger.info(
+            f"Setting checkpoint path to {str(Path(args.dump_dir) / 'checkpoints')}"
+        )
         args.checkpoint.path = str(Path(args.dump_dir) / "checkpoints")
 
     for source in args.data.sources:
@@ -242,7 +244,10 @@ def train(args: TrainArgs):
         dp_degree = dp_mesh.size()
         dp_rank = dp_mesh.get_local_rank()
         if args.distributed.dp_shard > 1:
-            dp_rank = dp_rank * world_mesh["dp_shard"].size() + world_mesh["dp_shard"].get_local_rank()
+            dp_rank = (
+                dp_rank * world_mesh["dp_shard"].size()
+                + world_mesh["dp_shard"].get_local_rank()
+            )
             dp_degree *= world_mesh["dp_shard"].size()
 
         logger.info(f"Running on dp rank : {dp_rank}")
@@ -277,8 +282,10 @@ def train(args: TrainArgs):
 
         if args.checkpoint.init_ckpt_path:
             logger.info(f"Loading initial model from {args.checkpoint.init_ckpt_path}")
-            load_from_checkpoint(args.checkpoint.init_ckpt_path, model, model_key="model") # Put model_key="" if its directly the model checkpoint
-            model.rope_embeddings.reset_parameters() # For RoPe initialization since it's a buffer it might not be loaded
+            load_from_checkpoint(
+                args.checkpoint.init_ckpt_path, model, model_key="model"
+            )  # Put model_key="" if its directly the model checkpoint
+            model.rope_embeddings.reset_parameters()  # For RoPe initialization since it's a buffer it might not be loaded
         else:
             with torch.random.fork_rng(devices=[torch.cuda.current_device()]):
                 torch.manual_seed(args.model.seed)
@@ -431,7 +438,9 @@ def train(args: TrainArgs):
                 )
 
                 grad_norm = (
-                    grad_norm.full_tensor() if isinstance(grad_norm, DTensor) else grad_norm
+                    grad_norm.full_tensor()
+                    if isinstance(grad_norm, DTensor)
+                    else grad_norm
                 ).item()
 
                 optimizer.step()
@@ -482,6 +491,26 @@ def train(args: TrainArgs):
                     )
                     * wps
                 )
+
+                # Some extra derived timing metrics
+                est_curr_step_time = curr_iter_time * args.grad_acc_steps
+                est_time_elapsed = train_state.step * est_curr_step_time
+                est_time_remaining = args.steps * est_curr_step_time - est_time_elapsed
+                est_time_elapsed_hrs = round(est_time_elapsed / 3600, 2)
+                est_time_elapsed_days = round(est_time_elapsed / (3600 * 24), 2)
+                est_time_elapsed_str = (
+                    f"{est_time_elapsed_days} days"
+                    if est_time_elapsed_days > 1
+                    else f"{est_time_elapsed_hrs} hours"
+                )
+                est_time_remaining_hrs = round(est_time_remaining / 3600, 2)
+                est_time_remaining_days = round(est_time_remaining / (3600 * 24), 2)
+                est_time_remaining_str = (
+                    f"{est_time_remaining_days} days"
+                    if est_time_remaining_days > 1
+                    else f"{est_time_remaining_hrs} hours"
+                )
+
                 metrics = flatten_dict(
                     {
                         "global_step": train_state.step,
@@ -491,6 +520,13 @@ def train(args: TrainArgs):
                             "FLOPS": FLOPS,
                             "curr_iter_time": curr_iter_time,
                             "data_load_time": data_load_time,
+                            "curr_step_time": est_curr_step_time,
+                            "est_time_elapsed": est_time_elapsed_str,
+                            "est_time_remaining": est_time_remaining_str,
+                            "est_time_elapsed_hrs": est_time_elapsed_hrs,
+                            "est_time_elapsed_days": est_time_elapsed_days,
+                            "est_time_remaining_hrs": est_time_remaining_hrs,
+                            "est_time_remaining_days": est_time_remaining_days,
                         },
                         "optim": {
                             "grad_norm": grad_norm,
@@ -519,7 +555,9 @@ def train(args: TrainArgs):
                     f"  grad: {grad_norm:.2e}"
                     f"  flops: {FLOPS:.2e}"
                     f"  wps: {wps:.2e}"
-                    f"  iter: {curr_iter_time:>7}"
+                    f"  iter_time: {curr_iter_time:>7}"
+                    f"  step_time: {est_curr_step_time:>7}"
+                    f"  remaining: {est_time_remaining_str}"
                     f"  data: {data_load_time:>5}"
                     f"  lr: {curr_lr:.2e}"
                     f"  mem: {gpu_mem_stats.max_active_pct:.0f}%"
