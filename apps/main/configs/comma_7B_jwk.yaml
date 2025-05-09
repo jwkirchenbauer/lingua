@@ -1,6 +1,19 @@
 # python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
 # --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
 # --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_32N_2M \
+# --nodes=32 \
+# --minutes=1440 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_32N_2M data.batch_size=4 grad_acc_steps=1 steps=500000 profiling.run=False' \
+
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
 # --qos=pflask \
 # --bank=flask \
 # --rocm_version=6.3.0 \
@@ -23,6 +36,19 @@
 # --minutes=2880 \
 # --pass_run_name=False \
 # --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_64N data.batch_size=4 grad_acc_steps=2 profiling.run=False' \
+
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_128N \
+# --nodes=128 \
+# --minutes=29 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_128N data.batch_size=4 grad_acc_steps=1 profiling.run=False' \
 
 # --dryrun \
 
