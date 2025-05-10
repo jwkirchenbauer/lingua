@@ -9,7 +9,7 @@
 # --nodes=1 \
 # --minutes=1440 \
 # --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_stdhps_1N' \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_stdhps.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_stdhps_1N' \
 
 # python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
 # --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
@@ -22,7 +22,7 @@
 # --nodes=128 \
 # --minutes=1440 \
 # --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_stdhps_128N' \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_stdhps.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_stdhps_128N' \
 
 # --dryrun \
 
