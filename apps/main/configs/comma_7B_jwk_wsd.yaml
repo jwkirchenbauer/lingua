@@ -1,0 +1,152 @@
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_7B_wsd_1N \
+# --nodes=1 \
+# --minutes=1440 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_wsd.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_wsd_1N' \
+
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_7B_wsd_128N \
+# --nodes=128 \
+# --minutes=1440 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_wsd.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_wsd_128N' \
+
+# --dryrun \
+
+dump_dir: /p/lustre5/kirchenb/common-pile-root/lingua/output
+name: "prod_lingua_7B_wsd_128N"
+steps: 125_000
+grad_acc_steps: 1
+
+seed: 777
+optim:
+  scheduler: wsd
+  lr: 3.0e-4
+  weight_decay: 2.0e-1
+  warmup: 2000
+  lr_min_ratio: 1.0e-4
+  decay_fraction: 1.0e-1
+  clip: 1.0
+
+distributed:
+  fsdp_type: full_shard
+  compile: true
+  model_dtype: bf16
+  matmul_allow_tf32: false
+  selective_activation_checkpointing: false
+  tp_size: 1
+
+model:
+  dim: 4096
+  n_layers: 32
+  n_heads: 32
+  rope_theta: 100_000
+  ffn_dim_multiplier: 1.0
+  multiple_of: 256
+
+data:
+  root_dir: /p/vast1/pretrain/datasets/common_pile/common-pile-chunked
+  sources:
+    peS2o: 0.274065475510351
+    stackexchange: 0.134617935796937
+    stackv2_edu: 0.127770669195666
+    cccc: 0.0871992270000557
+    wikimedia: 0.0861800315862719
+    github_archive: 0.0606452345122248
+    uspto: 0.0413469377516883
+    pubmed: 0.0367902799837971
+    arxiv_papers: 0.0292395449667613
+    caselaw_access_project: 0.0193875362722656
+    wikiteam: 0.0137485410839637
+    doab: 0.0180439781895451
+    uk_hansard: 0.0144498535570883
+    pre_1929_books: 0.0115755547988338
+    ubuntu_irc: 0.00794254267719456
+    regulations: 0.00762583706405442
+    data_provenance_initiative: 0.00512264496834867
+    project_gutenberg: 0.00502100654070129
+    youtube: 0.00465917165839394
+    arxiv_abstracts: 0.00359635066160403
+    stackv2_html: 0.00225924255952781
+    usgpo: 0.00226024581728848
+    library_of_congress: 0.00222469340783564
+    biodiversity_heritage_library: 0.00221737524370278
+    pressbooks: 0.000865101033213598
+    libretexts: 0.00054149556727006
+    news: 0.000372716196818104
+    foodista: 0.000125363443065615
+    oercommons: 0.0000778696843693821
+    python_enhancement_proposals: 0.0000169983991984805
+    public_domain_review: 0.0000105448719635173
+  prefetch_size: 4096
+  seq_len: 4096
+  batch_size: 4
+  n_views: 2
+  load_async: true
+  tokenizer:
+    name: tiktoken
+    path: /p/vast1/pretrain/datasets/common_pile/common-pile-chunked/tokenizer/common-pile-tokenizer.tiktoken
+
+profiling:
+  run: false
+  mem_warmup: 0
+  mem_steps: 4
+  profile_warmup: 100
+  profile_steps: 4
+
+checkpoint:
+  dump:
+    every: 10000
+    keep: -1
+  eval:
+    every: 2000
+    keep: 3
+
+logging:
+  freq: 1
+
+async_eval_gpus: 8
+eval:
+  harness:
+    tasks:
+      - hellaswag
+      - task: boolq
+        dataset_kwargs:
+          trust_remote_code: true
+      - piqa
+      - task: social_iqa
+        dataset_kwargs:
+          trust_remote_code: true
+      - winogrande
+      - openbookqa
+      - arc_easy
+      - arc_challenge
+      - race
+      - commonsense_qa
+      # - coqa
+      - task: copa
+        dataset_kwargs:
+          trust_remote_code: true
+      - mmlu
+      - mmlu_pro
+      # - task: nq_open
+      #   num_fewshot: 5
+      # - triviaqa
+      # - gsm8k
+      # - bbh
+  generator:
+    max_tokens: 8192
+    dtype: bf16
