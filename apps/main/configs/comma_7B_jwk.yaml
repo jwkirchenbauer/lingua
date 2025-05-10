@@ -50,6 +50,19 @@
 # --pass_run_name=False \
 # --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_128N data.batch_size=4 grad_acc_steps=1 profiling.run=False' \
 
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_128N_stdhps \
+# --nodes=128 \
+# --minutes=1440 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_128N_stdhps data.batch_size=4 grad_acc_steps=1 optim.scheduler=cosine optim.lr=3.0e-4 optim.lr_min_ratio=1.0e-1 optim.weight_decay=1.0e-1' \
+
 # --dryrun \
 
 # new 32N or 64N prod step math
@@ -129,7 +142,7 @@ data:
     path: /p/vast1/pretrain/datasets/common_pile/common-pile-chunked/tokenizer/common-pile-tokenizer.tiktoken
 
 profiling:
-  run: true
+  run: false
   mem_warmup: 0
   mem_steps: 4
   profile_warmup: 100
