@@ -60,6 +60,7 @@ class CheckpointArgs:
     path: Optional[str] = None
     init_ckpt_path: Optional[str] = None
     continue_training_from_init: bool = False
+    ignore_data_loader_state: bool = False
 
 
 def _get_key_step(name: str):
@@ -108,6 +109,7 @@ class CheckpointManager:
         self.eval_every = args.eval
         self.init_ckpt_path = args.init_ckpt_path
         self.continue_training_from_init = args.continue_training_from_init
+        self.ignore_data_loader_state = args.ignore_data_loader_state
 
         assert os.path.exists(self.path), f"Path {self.path} does not exist and needs to be created before using CheckpointManager (use instantiate_and_make_dir)"
 
@@ -280,8 +282,19 @@ class CheckpointManager:
         logger.info("Reloading train state")
         with open(path / train_state_name, "r") as f:
             train_state_dict = json.load(f)
-        train_state.load_state_dict(train_state_dict)
-        logger.info("Train state reloaded")
+
+        # In a special case, we want to load everything in the checkpoint's train state
+        # except the data loader state, and we've added a special arg to load_state_dict
+        # to ignore the data loader state
+        if self.ignore_data_loader_state:
+            train_state.load_state_dict(
+                train_state_dict,
+                ignore_data_loader_state=True,
+            )
+            logger.info("Train state reloaded, but ignoring data loader state")
+        else:
+            train_state.load_state_dict(train_state_dict)
+            logger.info("Train state reloaded")
 
         logger.info(f"Loading from: {str(path)}")
         state_dict = self.get_state_dict(

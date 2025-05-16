@@ -119,10 +119,11 @@ class TrainState(Stateful):
             "scheduler": self.scheduler.state_dict(),
         }
 
-    def load_state_dict(self, state_dict):
+    def load_state_dict(self, state_dict, ignore_data_loader_state=False):
         self.step = state_dict["step"]
         self.acc_step = state_dict["acc_step"]
-        self.data_loader_state = PackTokensState(**state_dict["data_loader_state"])
+        if not ignore_data_loader_state:
+            self.data_loader_state = PackTokensState(**state_dict["data_loader_state"])
         self.scheduler.load_state_dict(state_dict["scheduler"])
 
 

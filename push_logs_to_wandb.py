@@ -3,7 +3,6 @@ import os
 import json
 
 for RUN_NAME in [
-    "prod_lingua_64N",
     "prod_lingua_7B_wsd_128N",
     "prod_lingua_7B_curric_64N",
 ]:
