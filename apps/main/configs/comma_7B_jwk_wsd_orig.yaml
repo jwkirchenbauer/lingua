@@ -1,15 +1,15 @@
 # python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
 # --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
 # --rccl_mode=rdzv-lbann \
-# --qos=pflask \
+# --qos=pbatch \
 # --bank=flask \
 # --rocm_version=6.3.0 \
 # --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
-# --run_name=prod_lingua_7B_curric_64N \
-# --nodes=64 \
-# --minutes=2880 \
+# --run_name=prod_lingua_7B_wsd_1N \
+# --nodes=1 \
+# --minutes=1440 \
 # --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_phase2.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_curric_64N checkpoint.ignore_data_loader_state=True' \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_wsd.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_wsd_1N' \
 
 # python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
 # --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
@@ -18,42 +18,27 @@
 # --bank=flask \
 # --rocm_version=6.3.0 \
 # --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
-# --run_name=prod_lingua_7B_curric_64N \
-# --nodes=64 \
+# --run_name=prod_lingua_7B_wsd_128N \
+# --nodes=128 \
 # --minutes=1440 \
 # --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_phase2.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_curric_64N checkpoint.ignore_data_loader_state=True' \
-
-# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
-# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
-# --rccl_mode=rdzv-lbann \
-# --qos=pbatch \
-# --bank=flask \
-# --rocm_version=6.3.0 \
-# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
-# --run_name=prod_lingua_7B_curric_64N \
-# --nodes=64 \
-# --minutes=1440 \
-# --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_phase2.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_curric_64N' \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_wsd.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_wsd_128N' \
 
 # --dryrun \
 
-# 64N prod step math
-# ((N*4)*mbsz*acc)*seq_len)*125000
-#   = ((64*4)*4*2)*4096)*125000 = 1,048,576,000,000
-
 dump_dir: /p/lustre5/kirchenb/common-pile-root/lingua/output
-name: "prod_lingua_7B_curric_64N"
+name: "prod_lingua_7B_wsd_128N"
 steps: 125_000
-grad_acc_steps: 2
+grad_acc_steps: 1
 
 seed: 777
 optim:
-  lr: 1.0e-3
-  weight_decay: 0.2
+  scheduler: wsd
+  lr: 3.0e-4
+  weight_decay: 2.0e-1
   warmup: 2000
-  lr_min_ratio: 0.000001
+  lr_min_ratio: 1.0e-4
+  decay_fraction: 1.0e-1
   clip: 1.0
 
 distributed:

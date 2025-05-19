@@ -38,7 +38,7 @@ optim:
   weight_decay: 2.0e-1
   warmup: 2000
   lr_min_ratio: 1.0e-4
-  decay_fraction: 1.0e-1
+  decay_fraction: 3.33333e-1
   clip: 1.0
 
 distributed:
