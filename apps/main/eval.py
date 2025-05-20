@@ -215,6 +215,21 @@ def eval_on_val(generator, val_args: ValidationArgs, train_cfg):
 
     return all_val_metrics
 
+
+def launch_consolidate_only(cfg: EvalArgs):
+    if (
+        Path(cfg.ckpt_dir).exists()
+        and (Path(cfg.ckpt_dir) / "params.json").exists()
+        and next(Path(cfg.ckpt_dir).glob("*.pth"), None) is not None
+    ):
+        consolidate_path = Path(cfg.ckpt_dir)
+    else:
+        consolidate_path = Path(cfg.ckpt_dir) / CONSOLIDATE_FOLDER
+        if not consolidate_path.exists() and get_global_rank() == 0:
+            consolidate_path = consolidate_checkpoints(cfg.ckpt_dir)
+    print(f"consolidate_path: {consolidate_path}")
+
+
 def launch_eval(cfg: EvalArgs):
     if not torch.distributed.is_initialized():
         setup_torch_distributed(DistributedArgs())
