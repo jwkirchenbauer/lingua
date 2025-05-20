@@ -11,11 +11,11 @@ DRY_RUN = True
 WRITE_ONLY = False
 # WRITE_ONLY = True
 
-DO_CONVERT = True
-DO_EVAL = False
+# DO_CONVERT = True
+# DO_EVAL = False
 
-# DO_CONVERT = False
-# DO_EVAL = True
+DO_CONVERT = False
+DO_EVAL = True
 
 assert DO_CONVERT ^ DO_EVAL, "You must choose one of DO_CONVERT or DO_EVAL"
 
@@ -32,8 +32,6 @@ RCCL_INSTALL_DIR = "/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/l
 # CONVERSION_CONDA_ENV = "/usr/workspace/wsb/kirchenb/tuolumne_conda_28_630_lingua"
 # EVAL_CONDA_ENV = "/usr/workspace/wsb/kirchenb/tuolumne_conda_28_630_olmes"
 
-BASHRC_FILE = "/g/g11/kirchenb/.bashrc"
-
 WRKSPC = os.getenv("WRKSPC")
 
 # WANDB_PROJECT_NAME = "common"
@@ -42,7 +40,6 @@ WRKSPC = os.getenv("WRKSPC")
 
 BASE_OUT_DIR = f"/p/lustre5/kirchenb/common-pile-root/lingua/output"
 
-BASE_RUN_NAME = "prod_lingua_64N_convert_eval"
 
 # QOS = "pdebug"
 QOS = "pbatch"
@@ -54,8 +51,8 @@ JOB_LIMIT = None
 # JOB_LIMIT = 1
 
 # TIME_LIMIT = 59
-# TIME_LIMIT = 119
-TIME_LIMIT = 480
+# TIME_LIMIT = 240
+TIME_LIMIT = 1440
 
 TAG_LIST = [
     "eval",
@@ -63,17 +60,31 @@ TAG_LIST = [
 TAG_LIST = [str(t).replace(".", "") for t in TAG_LIST]
 WANDB_TAG_STRING = f"[{','.join(TAG_LIST)}]"
 
+
+# BASE_RUN_NAME = "prod_lingua_64N_convert_eval"
+# BASE_RUN_NAME = "prod_lingua_7B_wsd_128N_convert_eval"
+# BASE_RUN_NAME = "prod_lingua_7B_curric_64N_convert_eval"
+BASE_RUN_NAME = "bulk_convert_eval"
+
 # models
 exp_list = [
-    [
-        "prod_lingua_64N",
-    ],
+    # "prod_lingua_64N",
+    ["prod_lingua_7B_wsd_128N_orig", [125_000]],
+    ["prod_lingua_7B_wsd_128N", [80_000, 125_000]],
+    ["prod_lingua_7B_curric_64N_phase1", [42_000]],
+    ["prod_lingua_7B_curric_64N_phase2", [84_000]],
 ]
 
 # STEPS = [10_000]
 # STEPS = [20_000, 30_000]
 # STEPS = [s for s in range(10_000, 40_001, 10_000)] + [38_000, 42_000]
-STEPS = [s for s in range(20_000, 40_001, 10_000)] + [38_000, 42_000]
+# STEPS = [s for s in range(20_000, 40_001, 10_000)] + [38_000]
+
+# WSD run key step set
+# STEPS = [80_000, 125_000]
+# curriculum run key step set
+# STEPS = [42_000]
+# STEPS = [84_000]
 
 hparam = [
     # "ablation:knowledge::comma",
@@ -95,6 +106,7 @@ for exp in final_exp_list:
 
     (
         run_name,
+        STEPS,
         eval_task_spec,
     ) = exp
 
