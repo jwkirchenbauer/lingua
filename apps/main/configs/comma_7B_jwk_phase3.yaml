@@ -1,0 +1,151 @@
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pflask \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_7B_curric_64N \
+# --nodes=64 \
+# --minutes=2880 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_phase3.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_curric_64N checkpoint.ignore_data_loader_state=True' \
+
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_7B_curric_64N \
+# --nodes=64 \
+# --minutes=1440 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_phase3.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_curric_64N checkpoint.ignore_data_loader_state=True' \
+
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=flask \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_7B_curric_64N \
+# --nodes=64 \
+# --minutes=1440 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_phase3.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_curric_64N' \
+
+# --dryrun \
+
+# 64N prod step math
+# ((N*4)*mbsz*acc)*seq_len)*125000
+#   = ((64*4)*4*2)*4096)*125000 = 1,048,576,000,000
+
+dump_dir: /p/lustre5/kirchenb/common-pile-root/lingua/output
+name: "prod_lingua_7B_curric_64N"
+steps: 125_000
+grad_acc_steps: 2
+
+seed: 777
+optim:
+  lr: 1.0e-3
+  weight_decay: 0.2
+  warmup: 2000
+  lr_min_ratio: 0.000001
+  clip: 1.0
+
+distributed:
+  fsdp_type: full_shard
+  compile: true
+  model_dtype: bf16
+  matmul_allow_tf32: false
+  selective_activation_checkpointing: false
+  tp_size: 1
+
+model:
+  dim: 4096
+  n_layers: 32
+  n_heads: 32
+  rope_theta: 100_000
+  ffn_dim_multiplier: 1.0
+  multiple_of: 256
+
+data:
+  root_dir: /p/vast1/pretrain/datasets/common_pile/common-pile-chunked
+  sources:
+    stackv2_edu: 0.185187569398057
+    doab: 0.0523049692739147
+    wikimedia: 0.249814306844858
+    stackexchange: 0.162593186713308
+    peS2o: 0.13240785120504
+    cccc: 0.126384349422171
+    arxiv_papers: 0.0706317589264504
+    data_provenance_initiative: 0.0148492635524187
+    pressbooks: 0.00250771102058231
+    libretexts: 0.0015696599004111
+    news: 0.00108041081726406
+    foodista: 0.000363397193719642
+    oercommons: 0.000225724693608302
+    python_enhancement_proposals: 0.0000492740978980684
+    public_domain_review: 0.0000305669402974955
+  prefetch_size: 4096
+  seq_len: 4096
+  batch_size: 4
+  n_views: 2
+  load_async: true
+  tokenizer:
+    name: tiktoken
+    path: /p/vast1/pretrain/datasets/common_pile/common-pile-chunked/tokenizer/common-pile-tokenizer.tiktoken
+
+profiling:
+  run: false
+  mem_warmup: 0
+  mem_steps: 4
+  profile_warmup: 100
+  profile_steps: 4
+
+checkpoint:
+  dump:
+    every: 10000
+    keep: -1
+  eval:
+    every: 2000
+    keep: 3
+
+logging:
+  freq: 1
+
+async_eval_gpus: 8
+eval:
+  harness:
+    tasks:
+      - hellaswag
+      - task: boolq
+        dataset_kwargs:
+          trust_remote_code: true
+      - piqa
+      - task: social_iqa
+        dataset_kwargs:
+          trust_remote_code: true
+      - winogrande
+      - openbookqa
+      - arc_easy
+      - arc_challenge
+      - race
+      - commonsense_qa
+      # - coqa
+      - task: copa
+        dataset_kwargs:
+          trust_remote_code: true
+      - mmlu
+      - mmlu_pro
+      # - task: nq_open
+      #   num_fewshot: 5
+      # - triviaqa
+      # - gsm8k
+      # - bbh
+  generator:
+    max_tokens: 8192
+    dtype: bf16
