@@ -68,7 +68,7 @@ BASE_RUN_NAME = "bulk_convert_eval"
 
 # models
 exp_list = [
-    # "prod_lingua_64N",
+    # ["prod_lingua_64N", [38_000]],
     ["prod_lingua_7B_wsd_128N_orig", [125_000]],
     ["prod_lingua_7B_wsd_128N", [80_000, 125_000]],
     ["prod_lingua_7B_curric_64N_phase1", [42_000]],
