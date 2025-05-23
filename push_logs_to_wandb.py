@@ -5,6 +5,7 @@ import json
 for RUN_NAME in [
     # "prod_lingua_7B_wsd_128N",
     "prod_lingua_7B_curric_64N",
+    "prod_lingua_64N",
 ]:
     SAVE_DIR = f"/p/lustre5/kirchenb/common-pile-root/lingua/output/{RUN_NAME}"
     EXP_VERSION = "v3"
