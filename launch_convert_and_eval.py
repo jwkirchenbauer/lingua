@@ -43,6 +43,11 @@ BASE_OUT_DIR = f"/p/lustre5/kirchenb/common-pile-root/lingua/output"
 
 # QOS = "pdebug"
 QOS = "pbatch"
+# QOS = "pflask"
+
+BANK = "guests"
+# BANK = "pflask"
+# BANK = "effml"
 
 ROCM_VERSION = "6.3.0"
 RCCL_MODE = "rdzv-lbann"
@@ -51,7 +56,7 @@ JOB_LIMIT = None
 # JOB_LIMIT = 1
 
 # TIME_LIMIT = 59
-# TIME_LIMIT = 240
+# TIME_LIMIT = 120
 TIME_LIMIT = 1440
 
 TAG_LIST = [
@@ -73,8 +78,9 @@ exp_list = [
     # ["prod_lingua_7B_wsd_128N", [80_000, 125_000]],
     # ["prod_lingua_7B_curric_64N_phase1", [42_000]],
     # ["prod_lingua_7B_curric_64N_phase2", [84_000]],
+    ["prod_lingua_7B_curric_64N_phase3", [125_000]],
     # ["prod_lingua_7B_curric_64N_phase3_prelim", [120_000]],
-    ["prod_lingua_7B_curric_64N_phase3_prelim_tuo", [120_000]],
+    # ["prod_lingua_7B_curric_64N_phase3_prelim_tuo", [120_000]],
 ]
 
 # STEPS = [10_000]
@@ -185,6 +191,7 @@ echo "Done evaluating {step_number} for {run_name}!"
     --rccl_installdir={RCCL_INSTALL_DIR} \
     --rccl_mode={RCCL_MODE} \
     --qos={QOS} \
+    --bank={BANK} \
     --rocm_version={ROCM_VERSION} \
     --run_name={run_name}{'_convert' if DO_CONVERT else ''}{'_eval' if DO_EVAL else ''}_{step_number_10digit} \
     --nodes={EVAL_NODE_COUNT} \

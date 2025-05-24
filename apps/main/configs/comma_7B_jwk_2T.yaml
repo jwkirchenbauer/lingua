@@ -5,27 +5,35 @@
 # --bank=guests \
 # --rocm_version=6.3.0 \
 # --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
-# --run_name=prod_lingua_7B_wsd_128N \
+# --run_name=prod_lingua_7B_2T_128N \
 # --nodes=128 \
 # --minutes=1440 \
 # --pass_run_name=False \
-# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_wsd.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_wsd_128N' \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_2T.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_2T_128N' \
 
-# --dryrun \
+# 128N step math
+# ((N*4)*mbsz*acc)*seq_len)*125000 
+#   = ((128*4)*4*1)*4096)*125000 = 1,048,576,000,000
+# then steps x2 to hit for 2T
+
+# yolo: use sqrt(4) lr multiplier to acct for 4x bsz from 2M to 8M
+# https://github.com/marin-community/marin/blob/main/docs/reports/marin-8b-retro.md#adjusted-hyperparameters
+# https://www.cs.princeton.edu/~smalladi/blog/2024/01/22/SDEs-ScalingRules/
+
+# eval tasks removed for speed, but ckpt.eval kept for less restart rollback
+# hope this works the way I think it does 🤞
 
 dump_dir: /p/lustre5/kirchenb/common-pile-root/lingua/output
-name: "prod_lingua_7B_wsd_128N"
+name: "prod_lingua_7B_2T_128N"
 steps: 250_000
 grad_acc_steps: 1
 
 seed: 777
 optim:
-  scheduler: wsd
-  lr: 3.0e-4
-  weight_decay: 2.0e-1
+  lr: 2.0e-3
+  weight_decay: 0.2
   warmup: 2000
-  lr_min_ratio: 1.0e-4
-  decay_fraction: 3.33333e-1
+  lr_min_ratio: 0.000001
   clip: 1.0
 
 distributed:
@@ -104,36 +112,3 @@ checkpoint:
 
 logging:
   freq: 1
-
-async_eval_gpus: 8
-eval:
-  harness:
-    tasks:
-      - hellaswag
-      - task: boolq
-        dataset_kwargs:
-          trust_remote_code: true
-      - piqa
-      - task: social_iqa
-        dataset_kwargs:
-          trust_remote_code: true
-      - winogrande
-      - openbookqa
-      - arc_easy
-      - arc_challenge
-      - race
-      - commonsense_qa
-      # - coqa
-      - task: copa
-        dataset_kwargs:
-          trust_remote_code: true
-      - mmlu
-      - mmlu_pro
-      # - task: nq_open
-      #   num_fewshot: 5
-      # - triviaqa
-      # - gsm8k
-      # - bbh
-  generator:
-    max_tokens: 8192
-    dtype: bf16
