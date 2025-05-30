@@ -5,12 +5,16 @@ import json
 for RUN_NAME, STEPS in [
     # ["prod_lingua_7B_curric_64N_phase1", [42_000]],
     # ["prod_lingua_7B_curric_64N_phase2", [84_000]],
-    ["prod_lingua_7B_curric_64N_phase3", [125_000]],
+    # ["prod_lingua_7B_curric_64N_phase3", [125_000]],
     # ["prod_lingua_7B_curric_64N_phase3_prelim", [120_000]],
     # ["prod_lingua_7B_curric_64N_phase3_prelim_tuo", [120_000]],
     # ["prod_lingua_7B_wsd_128N", [80_000, 125_000]],
     # ["prod_lingua_7B_wsd_128N_orig", [125_000]],
     # ["prod_lingua_64N", [40_000]],
+    # ["prod_lingua_64N", [80_000, 125_000]],
+    # ["common-pile_comma-v0-1_phase1", [482_000]],
+    # ["common-pile_comma-v0-1_phase2", [500_000]],
+    ["common-pile_comma-v0-1_avg", [500_000]],
 ]:
     for step_num in STEPS:
         STEP_10D = f"{step_num:010d}"
