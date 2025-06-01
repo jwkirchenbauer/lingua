@@ -11,11 +11,11 @@ DRY_RUN = False
 WRITE_ONLY = False
 # WRITE_ONLY = True
 
-# DO_CONVERT = True
-# DO_EVAL = False
+DO_CONVERT = True
+DO_EVAL = False
 
-DO_CONVERT = False
-DO_EVAL = True
+# DO_CONVERT = False
+# DO_EVAL = True
 
 assert DO_CONVERT ^ DO_EVAL, "You must choose one of DO_CONVERT or DO_EVAL"
 
@@ -34,19 +34,13 @@ RCCL_INSTALL_DIR = "/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/l
 
 WRKSPC = os.getenv("WRKSPC")
 
-# WANDB_PROJECT_NAME = "common"
-# WANDB_OFFLINE = "False"
-# WANDB_OFFLINE = "True"
-
 BASE_OUT_DIR = f"/p/lustre5/kirchenb/common-pile-root/lingua/output"
 
 
-# QOS = "pdebug"
-QOS = "pbatch"
-# QOS = "pflask"
+QOS = "pdebug"
+# QOS = "pbatch"
 
 BANK = "guests"
-# BANK = "pflask"
 # BANK = "effml"
 
 ROCM_VERSION = "6.3.0"
@@ -55,9 +49,9 @@ RCCL_MODE = "rdzv-lbann"
 JOB_LIMIT = None
 # JOB_LIMIT = 1
 
-# TIME_LIMIT = 59
+TIME_LIMIT = 59
 # TIME_LIMIT = 120
-TIME_LIMIT = 1440
+# TIME_LIMIT = 1440
 
 TAG_LIST = [
     "eval",
@@ -65,41 +59,31 @@ TAG_LIST = [
 TAG_LIST = [str(t).replace(".", "") for t in TAG_LIST]
 WANDB_TAG_STRING = f"[{','.join(TAG_LIST)}]"
 
-
-# BASE_RUN_NAME = "prod_lingua_64N_convert_eval"
-# BASE_RUN_NAME = "prod_lingua_7B_wsd_128N_convert_eval"
-# BASE_RUN_NAME = "prod_lingua_7B_curric_64N_convert_eval"
-BASE_RUN_NAME = "bulk_convert_eval"
+# BASE_RUN_NAME = "bulk_convert_eval"
+BASE_RUN_NAME = "bulk_convert_eval_corrected"
 
 # models
 exp_list = [
-    ["prod_lingua_64N", [80_000, 125_000]],
+    # ["prod_lingua_7B_curric_64N_phase3_prelim", [120_000]],
+    # ["prod_lingua_7B_curric_64N_phase3_prelim_tuo", [120_000]],
+    # ["prod_lingua_64N", [80_000, 125_000]],
+    # ["prod_lingua_64N", [125_000]],
     # ["prod_lingua_7B_wsd_128N_orig", [125_000]],
-    # ["prod_lingua_7B_wsd_128N", [80_000, 125_000]],
+    # ["prod_lingua_7B_wsd_128N_1T", [80_000, 125_000]],
+    # ["prod_lingua_7B_wsd_128N", [248_000]],
+    # ["prod_lingua_7B_wsd_128N", [250_000]],
+    ["prod_lingua_7B_2T_128N", [250_000]],
     # ["prod_lingua_7B_curric_64N_phase1", [42_000]],
     # ["prod_lingua_7B_curric_64N_phase2", [84_000]],
     # ["prod_lingua_7B_curric_64N_phase3", [125_000]],
-    # ["prod_lingua_7B_curric_64N_phase3_prelim", [120_000]],
-    # ["prod_lingua_7B_curric_64N_phase3_prelim_tuo", [120_000]],
 ]
-
-# STEPS = [10_000]
-# STEPS = [20_000, 30_000]
-# STEPS = [s for s in range(10_000, 40_001, 10_000)] + [38_000, 42_000]
-# STEPS = [s for s in range(20_000, 40_001, 10_000)] + [38_000]
-
-# WSD run key step set
-# STEPS = [80_000, 125_000]
-# curriculum run key step set
-# STEPS = [42_000]
-# STEPS = [84_000]
 
 hparam = [
     # "ablation:knowledge::comma",
-    "ablation:all::comma",
+    # "ablation:all::comma",
+    "eval:all::comma",
 ]
 final_exp_list = list(chain(*[[exp + [hp] for hp in hparam] for exp in exp_list]))
-# final_exp_list = exp_list
 
 if JOB_LIMIT is not None:
     final_exp_list = final_exp_list[:JOB_LIMIT]
@@ -124,7 +108,8 @@ for exp in final_exp_list:
     run_ckpts_subdir = "checkpoints"
     checkpoint_dir = f"{parent_dir}/{run_ckpts_subdir}"
     hf_checkpoint_dir = f"{parent_dir}/checkpoints_hf"
-    evals_dir = f"{parent_dir}/olmes_evals"
+    # evals_dir = f"{parent_dir}/olmes_evals"
+    evals_dir = f"{parent_dir}/olmes_evals/{eval_task_spec.replace('::', '_').replace(':', '_')}"
 
     if not os.path.exists(parent_dir):
         continue
