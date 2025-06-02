@@ -7,6 +7,10 @@ for RUN_NAME, STEPS, EVAL_TASK_SPEC in [
     # ["prod_lingua_7B_curric_64N_phase3_prelim_tuo", [120_000], None],
     # ["prod_lingua_64N", [40_000], None],
     # ["prod_lingua_64N", [80_000, 125_000], None],
+    # ref canonical set
+    # ["common-pile_comma-v0-1_phase1", [482_000], None],
+    # ["common-pile_comma-v0-1_phase2", [500_000], None],
+    # ["common-pile_comma-v0-1_avg", [500_000], None],
     # new push set
     # ["prod_lingua_64N", [125_000], "eval:all::comma"],
     # ["prod_lingua_7B_curric_64N_phase1", [42_000], "eval:all::comma"],
@@ -18,10 +22,7 @@ for RUN_NAME, STEPS, EVAL_TASK_SPEC in [
     # ["prod_lingua_7B_wsd_128N", [248_000], "eval:all::comma"],
     # ["prod_lingua_7B_wsd_128N", [250_000], "eval:all::comma"],
     # second 2T
-    ["prod_lingua_7B_2T_128N", [250_000], "eval:all::comma"],
-    # ["common-pile_comma-v0-1_phase1", [482_000], None],
-    # ["common-pile_comma-v0-1_phase2", [500_000], None],
-    # ["common-pile_comma-v0-1_avg", [500_000], None],
+    # ["prod_lingua_7B_2T_128N", [250_000], "eval:all::comma"],
 ]:
     for step_num in STEPS:
         STEP_10D = f"{step_num:010d}"

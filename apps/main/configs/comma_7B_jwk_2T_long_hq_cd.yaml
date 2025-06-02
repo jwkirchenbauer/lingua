@@ -1,0 +1,111 @@
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=guests \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_7B_2T_long_hq_cd_128N \
+# --nodes=128 \
+# --minutes=1440 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_2T_long_hq_cd.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_2T_long_hq_cd_128N checkpoint.ignore_data_loader_state=True' \
+
+# python /p/lustre5/$USER/llnl-tools/launch_tuo.py \
+# --rccl_installdir=/collab/usr/global/tools/rccl/$SYS_TYPE/rocm-6.3.1/install/lib \
+# --rccl_mode=rdzv-lbann \
+# --qos=pbatch \
+# --bank=guests \
+# --rocm_version=6.3.0 \
+# --output_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output \
+# --run_name=prod_lingua_7B_2T_long_hq_cd_128N \
+# --nodes=128 \
+# --minutes=1440 \
+# --pass_run_name=False \
+# --custom_invocation='python -m apps.main.train config=apps/main/configs/comma_7B_jwk_2T_long_hq_cd.yaml dump_dir=/p/lustre5/kirchenb/common-pile-root/lingua/output/prod_lingua_7B_2T_long_hq_cd_128N' \
+
+# 128N step math
+# ((N*4)*mbsz*acc)*seq_len)*125000 
+#   = ((128*4)*4*1)*4096)*125000 = 1,048,576,000,000
+# then steps x2 to hit for 2T
+
+# yolo: use sqrt(4) lr multiplier to acct for 4x bsz from 2M to 8M
+# https://github.com/marin-community/marin/blob/main/docs/reports/marin-8b-retro.md#adjusted-hyperparameters
+# https://www.cs.princeton.edu/~smalladi/blog/2024/01/22/SDEs-ScalingRules/
+
+# eval tasks removed for speed, but ckpt.eval kept for less restart rollback
+# hope this works the way I think it does 🤞
+
+dump_dir: /p/lustre5/kirchenb/common-pile-root/lingua/output
+name: "prod_lingua_7B_2T_long_hq_cd_128N"
+steps: 250_000
+grad_acc_steps: 1
+
+seed: 777
+optim:
+  lr: 2.0e-3
+  weight_decay: 0.2
+  warmup: 2000
+  lr_min_ratio: 0.000001
+  clip: 1.0
+
+distributed:
+  fsdp_type: full_shard
+  compile: true
+  model_dtype: bf16
+  matmul_allow_tf32: false
+  selective_activation_checkpointing: false
+  tp_size: 1
+
+model:
+  dim: 4096
+  n_layers: 32
+  n_heads: 32
+  rope_theta: 100_000
+  ffn_dim_multiplier: 1.0
+  multiple_of: 256
+
+data:
+  root_dir: /p/vast1/pretrain/datasets/common_pile/common-pile-chunked
+  sources:
+    stackv2_edu: 0.170363004622478
+    doab: 0.160392905980941
+    wikimedia: 0.15321084473113
+    stackexchange: 0.149577338855193
+    peS2o: 0.121808388328754
+    cccc: 0.116267077616518
+    arxiv_papers: 0.0649775722614287
+    data_provenance_initiative: 0.0455351865398593
+    pressbooks: 0.00768988231013495
+    libretexts: 0.00481335361292812
+    news: 0.00331307394000609
+    foodista: 0.00111435553323384
+    oercommons: 0.000692183554680895
+    python_enhancement_proposals: 0.000151098755264962
+    public_domain_review: 0.0000937333574480524
+  prefetch_size: 4096
+  seq_len: 4096
+  batch_size: 4
+  n_views: 2
+  load_async: true
+  tokenizer:
+    name: tiktoken
+    path: /p/vast1/pretrain/datasets/common_pile/common-pile-chunked/tokenizer/common-pile-tokenizer.tiktoken
+
+profiling:
+  run: false
+  mem_warmup: 0
+  mem_steps: 4
+  profile_warmup: 100
+  profile_steps: 4
+
+checkpoint:
+  dump:
+    every: 10000
+    keep: -1
+  eval:
+    every: 500
+    keep: 21
+
+logging:
+  freq: 1
