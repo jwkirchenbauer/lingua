@@ -119,12 +119,23 @@ class TrainState(Stateful):
             "scheduler": self.scheduler.state_dict(),
         }
 
-    def load_state_dict(self, state_dict, ignore_data_loader_state=False):
+    def load_state_dict(self, state_dict, ignore_data_loader_state=False, ignore_lr_scheduler_state=False):
         self.step = state_dict["step"]
         self.acc_step = state_dict["acc_step"]
         if not ignore_data_loader_state:
             self.data_loader_state = PackTokensState(**state_dict["data_loader_state"])
-        self.scheduler.load_state_dict(state_dict["scheduler"])
+        if not ignore_lr_scheduler_state:
+            self.scheduler.load_state_dict(state_dict["scheduler"])
+        else:
+            # hack, fast forward the scheduler state to the current step
+            # while loop mock used to try and avoid an off-by-one error
+            step_i = 0
+            while step_i < self.step:
+                self.scheduler.step()
+                step_i += 1
+            logger.info(
+                f"Ignored lr scheduler state and fast forwarded to step {self.step} with current lr {self.scheduler.get_last_lr()}"
+            )
 
 
 def validate_train_args(args: TrainArgs, output_size: int):

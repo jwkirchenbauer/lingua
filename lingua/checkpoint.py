@@ -61,6 +61,7 @@ class CheckpointArgs:
     init_ckpt_path: Optional[str] = None
     continue_training_from_init: bool = False
     ignore_data_loader_state: bool = False
+    ignore_lr_scheduler_state: bool = False
 
 
 def _get_key_step(name: str):
@@ -110,6 +111,7 @@ class CheckpointManager:
         self.init_ckpt_path = args.init_ckpt_path
         self.continue_training_from_init = args.continue_training_from_init
         self.ignore_data_loader_state = args.ignore_data_loader_state
+        self.ignore_lr_scheduler_state = args.ignore_lr_scheduler_state
 
         assert os.path.exists(self.path), f"Path {self.path} does not exist and needs to be created before using CheckpointManager (use instantiate_and_make_dir)"
 
@@ -286,12 +288,16 @@ class CheckpointManager:
         # In a special case, we want to load everything in the checkpoint's train state
         # except the data loader state, and we've added a special arg to load_state_dict
         # to ignore the data loader state
-        if self.ignore_data_loader_state:
+        if (self.ignore_data_loader_state==True) or (self.ignore_lr_scheduler_state==True):
             train_state.load_state_dict(
                 train_state_dict,
-                ignore_data_loader_state=True,
+                ignore_data_loader_state=self.ignore_data_loader_state,
+                ignore_lr_scheduler_state=self.ignore_lr_scheduler_state,
             )
-            logger.info("Train state reloaded, but ignoring data loader state")
+            logger.info(
+                f"Train state reloaded, but {'data loader state ' if self.ignore_data_loader_state else ''}{'lr scheduler state ' if self.ignore_lr_scheduler_state else ''}ignored."
+            )
+
         else:
             train_state.load_state_dict(train_state_dict)
             logger.info("Train state reloaded")

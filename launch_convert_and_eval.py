@@ -11,11 +11,11 @@ DRY_RUN = False
 WRITE_ONLY = False
 # WRITE_ONLY = True
 
-DO_CONVERT = True
-DO_EVAL = False
+# DO_CONVERT = True
+# DO_EVAL = False
 
-# DO_CONVERT = False
-# DO_EVAL = True
+DO_CONVERT = False
+DO_EVAL = True
 
 assert DO_CONVERT ^ DO_EVAL, "You must choose one of DO_CONVERT or DO_EVAL"
 
@@ -37,11 +37,11 @@ WRKSPC = os.getenv("WRKSPC")
 BASE_OUT_DIR = f"/p/lustre5/kirchenb/common-pile-root/lingua/output"
 
 
-QOS = "pdebug"
-# QOS = "pbatch"
+# QOS = "pdebug"
+QOS = "pbatch"
 
-BANK = "guests"
-# BANK = "effml"
+# BANK = "guests"
+BANK = "effml"
 
 ROCM_VERSION = "6.3.0"
 RCCL_MODE = "rdzv-lbann"
@@ -49,9 +49,9 @@ RCCL_MODE = "rdzv-lbann"
 JOB_LIMIT = None
 # JOB_LIMIT = 1
 
-TIME_LIMIT = 59
+# TIME_LIMIT = 59
 # TIME_LIMIT = 120
-# TIME_LIMIT = 1440
+TIME_LIMIT = 1440
 
 TAG_LIST = [
     "eval",
@@ -70,12 +70,15 @@ exp_list = [
     # ["prod_lingua_64N", [125_000]],
     # ["prod_lingua_7B_wsd_128N_orig", [125_000]],
     # ["prod_lingua_7B_wsd_128N_1T", [80_000, 125_000]],
-    # ["prod_lingua_7B_wsd_128N", [248_000]],
-    # ["prod_lingua_7B_wsd_128N", [250_000]],
-    ["prod_lingua_7B_2T_128N", [250_000]],
     # ["prod_lingua_7B_curric_64N_phase1", [42_000]],
     # ["prod_lingua_7B_curric_64N_phase2", [84_000]],
     # ["prod_lingua_7B_curric_64N_phase3", [125_000]],
+    # ["prod_lingua_7B_wsd_128N", [248_000]],
+    # ["prod_lingua_7B_wsd_128N", [250_000]],
+    # ["prod_lingua_7B_2T_128N", [250_000]],
+    # ["prod_lingua_7B_2T_long_hq_cd_128N", [246_500]],
+    # ["prod_lingua_7B_2T_lin_hq_cd_128N", [230_000]],
+    ["prod_lingua_7B_2T_lin_hq_cd_128N", [239_000]],
 ]
 
 hparam = [
