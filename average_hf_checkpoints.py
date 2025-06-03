@@ -169,189 +169,33 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_paths",
         nargs="+",
-        required=False,  # It should be required for actual use
+        required=True,
         help="A list of local Hugging Face model directory paths (e.g., ./model_dir1 ./model_dir2).",
     )
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="./averaged_model",
-        required=False,
-        help="The directory to save the averaged model. Defaults to './averaged_model'.",
+        required=True,
+        help="The directory to save the averaged model. Eg. './averaged_model'.",
     )
     args = parser.parse_args()
 
-    if args.model_paths:
-
-        print(f"Using provided model paths: {args.model_paths}")
-        output_directory = args.output_dir
-        model_paths_to_use = args.model_paths
-        average_model_weights(model_paths_to_use, output_directory)
-
-        # copy any file with *tok*.json in the first model directory to the output directory
-        print("Copying tokenizer files from the first model directory to the output directory...")
-        first_model_path = model_paths_to_use[0]
-        tok_files = [
-            f for f in os.listdir(first_model_path) if "tok" in f and f.endswith(".json")
-        ]
-        if tok_files:
-            for tok_file in tok_files:
-                src_path = os.path.join(first_model_path, tok_file)
-                dest_path = os.path.join(output_directory, tok_file)
-                shutil.copy(src_path, dest_path)
-                print(f"Copied {tok_file} to {output_directory}")
-        exit(0)
-
-    print("Creating dummy models for demonstration...")
-    dummy_model_paths = ["./dummy_model_1", "./dummy_model_2", "./dummy_model_3"]
-
-    # Clean up any previous runs
-    if os.path.exists("./model_avg_output"):
-        shutil.rmtree("./model_avg_output")
-    for p in dummy_model_paths:
-        if os.path.exists(p):
-            shutil.rmtree(p)
-
-    # Create dummy model 1
-    model1 = AutoModelForCausalLM.from_pretrained("distilbert/distilgpt2")
-    with torch.no_grad():
-        model1.transformer.h[0].attn.c_attn.weight.data += 0.1
-    model1.save_pretrained("./dummy_model_1")
-
-    # Create dummy model 2
-    model2 = AutoModelForCausalLM.from_pretrained("distilbert/distilgpt2")
-    with torch.no_grad():
-        model2.transformer.h[0].attn.c_attn.weight.data -= 0.1
-    model2.save_pretrained("./dummy_model_2")
-
-    # Create dummy model 3
-    model3 = AutoModelForCausalLM.from_pretrained("distilbert/distilgpt2")
-    model3.save_pretrained("./dummy_model_3")
-    print("Dummy models created.")
-
+    print(f"Using provided model paths: {args.model_paths}")
     output_directory = args.output_dir
-    model_paths_to_use = dummy_model_paths
+    model_paths_to_use = args.model_paths
     average_model_weights(model_paths_to_use, output_directory)
 
-    print("\nVerification: Loading averaged model and inspecting a parameter.")
-    averaged_model = AutoModelForCausalLM.from_pretrained(output_directory)
-
-    param_name_to_check = "transformer.h.0.attn.c_attn.weight"
-    lm_head_name_to_check = "lm_head.weight"
-
-    param_tensors_for_verification = []
-    lm_head_tensors_for_verification = []
-
-    for model_path in model_paths_to_use:
-        sf_file = os.path.join(model_path, "model.safetensors")
-        if os.path.exists(sf_file):
-            with safe_open(sf_file, framework="pt", device="cpu") as f:
-                if param_name_to_check in f.keys():
-                    param_tensors_for_verification.append(
-                        f.get_tensor(param_name_to_check)
-                    )
-                if lm_head_name_to_check in f.keys():
-                    lm_head_tensors_for_verification.append(
-                        f.get_tensor(lm_head_name_to_check)
-                    )
-                elif "transformer.wte.weight" in f.keys():  # Check for tied weight
-                    lm_head_tensors_for_verification.append(
-                        f.get_tensor("transformer.wte.weight")
-                    )
-                else:
-                    print(
-                        f"Warning: Neither '{lm_head_name_to_check}' nor 'transformer.wte.weight' found in {sf_file} for verification."
-                    )
-        else:  # Try index.json for sharded models
-            index_file = os.path.join(model_path, "model.safetensors.index.json")
-            if os.path.exists(index_file):
-                with open(index_file, "r") as f:
-                    index_data = json.load(f)
-
-                # Check for regular parameter
-                if param_name_to_check in index_data["weight_map"]:
-                    relative_path = index_data["weight_map"][param_name_to_check]
-                    full_path = os.path.join(model_path, relative_path)
-                    with safe_open(full_path, framework="pt", device="cpu") as f_shard:
-                        param_tensors_for_verification.append(
-                            f_shard.get_tensor(param_name_to_check)
-                        )
-
-                # Check for lm_head.weight (could be tied)
-                if lm_head_name_to_check in index_data["weight_map"]:
-                    relative_path = index_data["weight_map"][lm_head_name_to_check]
-                    full_path = os.path.join(model_path, relative_path)
-                    with safe_open(full_path, framework="pt", device="cpu") as f_shard:
-                        lm_head_tensors_for_verification.append(
-                            f_shard.get_tensor(lm_head_name_to_check)
-                        )
-                elif "transformer.wte.weight" in index_data["weight_map"]:
-                    relative_path = index_data["weight_map"]["transformer.wte.weight"]
-                    full_path = os.path.join(model_path, relative_path)
-                    with safe_open(full_path, framework="pt", device="cpu") as f_shard:
-                        lm_head_tensors_for_verification.append(
-                            f_shard.get_tensor("transformer.wte.weight")
-                        )
-                else:
-                    print(
-                        f"Warning: Neither '{lm_head_name_to_check}' nor 'transformer.wte.weight' found in index for {model_path} for verification."
-                    )
-            else:
-                print(
-                    f"Warning: Neither model.safetensors nor model.safetensors.index.json found in {model_path} for verification."
-                )
-
-    if (
-        len(param_tensors_for_verification) == len(model_paths_to_use)
-        and len(param_tensors_for_verification) > 0
-    ):
-        avg_calculated = torch.stack(param_tensors_for_verification).mean(dim=0)
-        avg_loaded = averaged_model.state_dict()[param_name_to_check]
-        is_close = torch.allclose(avg_calculated, avg_loaded, atol=1e-5)
-        print(
-            f"Are calculated average and loaded average for '{param_name_to_check}' close? {is_close}"
-        )
-        if not is_close:
-            print(
-                "Mismatch detected! Max difference:",
-                torch.max(torch.abs(avg_calculated - avg_loaded)).item(),
-            )
-    else:
-        print(
-            f"Skipping detailed verification for '{param_name_to_check}' due to missing parameters in some models."
-        )
-
-    if (
-        len(lm_head_tensors_for_verification) == len(model_paths_to_use)
-        and len(lm_head_tensors_for_verification) > 0
-    ):
-        avg_calculated_lm_head = torch.stack(lm_head_tensors_for_verification).mean(
-            dim=0
-        )
-        avg_loaded_lm_head = averaged_model.state_dict()[lm_head_name_to_check]
-        is_close_lm_head = torch.allclose(
-            avg_calculated_lm_head, avg_loaded_lm_head, atol=1e-5
-        )
-        print(
-            f"Are calculated average and loaded average for '{lm_head_name_to_check}' close? {is_close_lm_head}"
-        )
-        if not is_close_lm_head:
-            print(
-                "Mismatch detected for lm_head.weight! Max difference:",
-                torch.max(
-                    torch.abs(avg_calculated_lm_head - avg_loaded_lm_head)
-                ).item(),
-            )
-    else:
-        print(
-            f"Skipping detailed verification for '{lm_head_name_to_check}' due to missing parameters in some models."
-        )
-
-    # Clean up dummy models
-    print("Cleaning up dummy models...")
-    for p in dummy_model_paths:
-        if os.path.exists(p):
-            shutil.rmtree(p)
-    # Keep output_directory for inspection if needed, or uncomment to remove
-    # if os.path.exists(output_directory):
-    #     shutil.rmtree(output_directory)
+    # copy any file with *tok*.json in the first model directory to the output directory
+    print(
+        "Copying tokenizer files from the first model directory to the output directory..."
+    )
+    first_model_path = model_paths_to_use[0]
+    tok_files = [
+        f for f in os.listdir(first_model_path) if "tok" in f and f.endswith(".json")
+    ]
+    if tok_files:
+        for tok_file in tok_files:
+            src_path = os.path.join(first_model_path, tok_file)
+            dest_path = os.path.join(output_directory, tok_file)
+            shutil.copy(src_path, dest_path)
+            print(f"Copied {tok_file} to {output_directory}")
