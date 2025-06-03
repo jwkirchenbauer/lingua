@@ -78,7 +78,10 @@ exp_list = [
     # ["prod_lingua_7B_2T_128N", [250_000]],
     # ["prod_lingua_7B_2T_long_hq_cd_128N", [246_500]],
     # ["prod_lingua_7B_2T_lin_hq_cd_128N", [230_000]],
-    ["prod_lingua_7B_2T_lin_hq_cd_128N", [239_000]],
+    # ["prod_lingua_7B_2T_lin_hq_cd_128N", [239_000]],
+    # ["prod_lingua_7B_2T_lin_hq_cd_128N", list(range(230_000, 240_000, 1000))],
+    # this is just a hack name convention for the avg ckpt
+    ["prod_lingua_7B_2T_lin_hq_cd_128N", [239_001]],
 ]
 
 hparam = [
