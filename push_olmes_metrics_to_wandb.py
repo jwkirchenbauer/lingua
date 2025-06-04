@@ -22,10 +22,11 @@ for RUN_NAME, STEPS, EVAL_TASK_SPEC in [
     # ["prod_lingua_7B_wsd_128N", [248_000], "eval:all::comma"],
     # ["prod_lingua_7B_wsd_128N", [250_000], "eval:all::comma"],
     # second 2T
-    ["prod_lingua_7B_2T_128N", [250_000], "eval:all::comma"],
-    ["prod_lingua_7B_2T_long_hq_cd_128N", [246_500], "eval:all::comma"],
-    ["prod_lingua_7B_2T_lin_hq_cd_128N", [230_000], "eval:all::comma"],
+    # ["prod_lingua_7B_2T_128N", [250_000], "eval:all::comma"],
+    # ["prod_lingua_7B_2T_long_hq_cd_128N", [246_500], "eval:all::comma"],
+    # ["prod_lingua_7B_2T_lin_hq_cd_128N", [230_000], "eval:all::comma"],
     # ["prod_lingua_7B_2T_lin_hq_cd_128N", [239_000], "eval:all::comma"],
+    ["prod_lingua_7B_2T_lin_hq_cd_128N", [239_001], "eval:all::comma"],
 ]:
     for step_num in STEPS:
         STEP_10D = f"{step_num:010d}"
