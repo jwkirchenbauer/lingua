@@ -9,7 +9,8 @@ for RUN_NAME in [
     # "prod_lingua_7B_wsd_128N",
     # "prod_lingua_7B_2T_128N",
     # "prod_lingua_7B_2T_long_hq_cd_128N",
-    "prod_lingua_7B_2T_lin_hq_cd_128N",
+    # "prod_lingua_7B_2T_lin_hq_cd_128N",
+    "prod_lingua_7B_2T_low_lr_128N",
 ]:
     SAVE_DIR = f"/p/lustre5/kirchenb/common-pile-root/lingua/output/{RUN_NAME}"
     EXP_VERSION = "v3"
