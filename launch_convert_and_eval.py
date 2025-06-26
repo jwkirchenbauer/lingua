@@ -84,7 +84,9 @@ exp_list = [
     # this is just a hack name convention for the avg ckpt
     # ["prod_lingua_7B_2T_lin_hq_cd_128N", [239_001]],
     # the low lr run
-    ["prod_lingua_7B_2T_low_lr_lin_hq_cd_128N", [230_000]],
+    # ["prod_lingua_7B_2T_low_lr_lin_hq_cd_128N", [230_000]],
+    ["prod_lingua_7B_2T_low_lr_lin_hq_cd_128N", list(range(231_000, 240_000, 1000))],
+    ["prod_lingua_7B_2T_low_lr_lin_hq_cd_128N", [239_001]],
 ]
 
 hparam = [
