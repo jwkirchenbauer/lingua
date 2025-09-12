@@ -3,3 +3,6 @@
 *.ipynb
 slurm-*.out
 wandb
+data/
+tokenizers/
+out/
