@@ -39,18 +39,18 @@ from lingua.float8 import convert_linears_to_fp8
 
 logger = logging.getLogger()
 
-# for selective AC
-default_no_recompute_ops = {
-    torch.ops.aten.mm.default,
-    torch.ops.aten._scaled_mm.default,
-    torch.ops.aten._scaled_dot_product_efficient_attention.default,
-    torch.ops.aten._scaled_dot_product_flash_attention.default,
-    torch.ops.c10d_functional.reduce_scatter_tensor.default,
-    torch.ops.xformers_flash.flash_fwd.default,
-}
-with contextlib.suppress(AttributeError):  # ignore exception if op is missing (old xFormers)
-    default_no_recompute_ops.add(torch.ops.xformers.efficient_attention_forward_cutlass.default)
-    default_no_recompute_ops.add(torch.ops.xformers_flash3.flash_fwd.default)
+# # for selective AC
+# default_no_recompute_ops = {
+#     torch.ops.aten.mm.default,
+#     torch.ops.aten._scaled_mm.default,
+#     torch.ops.aten._scaled_dot_product_efficient_attention.default,
+#     torch.ops.aten._scaled_dot_product_flash_attention.default,
+#     torch.ops.c10d_functional.reduce_scatter_tensor.default,
+#     torch.ops.xformers_flash.flash_fwd.default,
+# }
+# with contextlib.suppress(AttributeError):  # ignore exception if op is missing (old xFormers)
+#     default_no_recompute_ops.add(torch.ops.xformers.efficient_attention_forward_cutlass.default)
+#     default_no_recompute_ops.add(torch.ops.xformers_flash3.flash_fwd.default)
 
 
 @dataclass
@@ -295,17 +295,17 @@ def default_fsdp_grouping_plan(n_layers: int) -> List[Tuple[str, bool]]:
     return [(f"layers.{i}", i < n_layers - 1) for i in range(n_layers)]
 
 
-def get_default_policy(no_recompute_ops=None):
-    no_recompute_ops = no_recompute_ops or default_no_recompute_ops
+# def get_default_policy(no_recompute_ops=None):
+#     no_recompute_ops = no_recompute_ops or default_no_recompute_ops
 
-    def default_policy(ctx, func, *args, **kwargs):
-        return (
-            CheckpointPolicy.MUST_SAVE
-            if func in no_recompute_ops
-            else CheckpointPolicy.PREFER_RECOMPUTE
-        )
+#     def default_policy(ctx, func, *args, **kwargs):
+#         return (
+#             CheckpointPolicy.MUST_SAVE
+#             if func in no_recompute_ops
+#             else CheckpointPolicy.PREFER_RECOMPUTE
+#         )
 
-    return default_policy
+#     return default_policy
 
 
 @torch.no_grad()

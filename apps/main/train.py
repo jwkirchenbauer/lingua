@@ -103,6 +103,9 @@ class TrainArgs:
     async_eval_gpus: Optional[int] = None
     eval: Optional[Any] = None
 
+    # attn control
+    attn_impl: str = "sdpa" # "flex_attention"
+
 
 @dataclass
 class TrainState(Stateful):
@@ -412,7 +415,8 @@ def train(args: TrainArgs):
                     next(model.parameters()).grad is None
                 ), "Probe model shouldn't have grads at this point"
 
-            loss = model(input_ids, labels)
+            # loss = model(input_ids, labels)
+            loss = model(input_ids, labels, attn_impl=args.attn_impl)
 
             if args.grad_acc_steps > 1:
                 model.set_requires_gradient_sync(train_state.acc_step == 0)
