@@ -23,6 +23,8 @@ from torch.optim import lr_scheduler
 from torch.distributed.checkpoint.stateful import Stateful
 from torch.distributed._tensor import DTensor
 
+from torch.special import xlogy
+
 from lingua.args import dataclass_from_dict, dump_config, flatten_dict
 from lingua.checkpoint import CheckpointArgs, CheckpointManager, load_from_checkpoint
 from lingua.data import (
@@ -220,6 +222,32 @@ def every_n_steps(train_state, freq, acc_step=None, acc_freq=None):
         test = test and ((train_state.acc_step % acc_freq) == 0)
     return test
 
+@torch.compile
+def soft_label_cross_entropy(pred_logits, target_logits):
+    # BxLxV, BxLxV
+    unnormed_pred_logits = pred_logits.flatten(end_dim=-2)
+    normed_target_probs = F.softmax(target_logits.flatten(end_dim=-2), -1)
+    return F.cross_entropy(
+        unnormed_pred_logits,
+        normed_target_probs,
+    ) # 1x
+
+@torch.compile
+def logit_entropy(logits):
+    # BxLxV
+    probs = F.softmax(logits.flatten(end_dim=-2), -1) # (BxL)xV
+    H_p = torch.sum(xlogy(probs, torch.reciprocal(probs)), dim=-1) # (BxL)x1
+    H_p_bar = torch.mean(H_p) # 1x
+    return H_p_bar
+
+@torch.compile
+def soft_ce_plus_ent_loss(logits_student, logits_teacher, beta=1.0):
+    # BxLxV, BxLxV
+    s_ce = soft_label_cross_entropy(logits_student, logits_teacher) # 1x
+    h = logit_entropy(logits_student) # 1x
+    loss = s_ce + beta * h
+    return loss
+
 
 def train(args: TrainArgs):
     with ExitStack() as context_stack:
@@ -256,12 +284,23 @@ def train(args: TrainArgs):
         # Initializing Model in meta device allows us to initialize models much bigger than 1 gpu's memory
         with torch.device("meta"):
             model = LMTransformer(args.model)
+            model_teacher = LMTransformer(args.model)
         logger.info("Model is built !")
 
         model_param_count = get_num_params(model)
+        model_teacher_param_count = get_num_params(model_teacher)
 
         model = parallelize_model(
             model,
+            world_mesh,
+            args.model,
+            args.distributed,
+            fsdp_grouping_plan=build_fsdp_grouping_plan(args.model),
+            tp_parallelize=tp_parallelize,
+            no_recompute_ops=get_no_recompute_ops(),
+        )
+        model_teacher = parallelize_model(
+            model_teacher,
             world_mesh,
             args.model,
             args.distributed,
@@ -273,6 +312,7 @@ def train(args: TrainArgs):
         # Once we shard the model on different gpus we can actually initialize the model
         # First we create empty tensors of the correct shapes
         model = model.to_empty(device="cuda")
+        model_teacher = model_teacher.to_empty(device="cuda")
         # Then we init the model. Please make sure this function initializes *ALL* parameters
         # and buffers, otherwise you will have random values in the unitialized tensors
         # which will silently fail (give nan gradients for example)
@@ -280,16 +320,21 @@ def train(args: TrainArgs):
         if args.checkpoint.init_ckpt_path:
             logger.info(f"Loading initial model from {args.checkpoint.init_ckpt_path}")
             load_from_checkpoint(args.checkpoint.init_ckpt_path, model, model_key="model") # Put model_key="" if its directly the model checkpoint
+            load_from_checkpoint(args.checkpoint.init_ckpt_path, model_teacher, model_key="model") # Put model_key="" if its directly the model checkpoint
             model.rope_embeddings.reset_parameters() # For RoPe initialization since it's a buffer it might not be loaded
+            model_teacher.rope_embeddings.reset_parameters() # For RoPe initialization since it's a buffer it might not be loaded
         else:
             with torch.random.fork_rng(devices=[torch.cuda.current_device()]):
                 torch.manual_seed(args.model.seed)
                 model.init_weights()
+                model_teacher.init_weights()
         check_model_value_range(model, range=10.0, std=1.0)
+        check_model_value_range(model_teacher, range=10.0, std=1.0)
 
         # log model size
 
         logger.info(f"Model size: {model_param_count:,} total parameters")
+        logger.info(f"Model teacher size: {model_teacher_param_count:,} total parameters")
 
         gpu_memory_monitor = GPUMemoryMonitor("cuda")
         logger.info(
@@ -331,6 +376,7 @@ def train(args: TrainArgs):
 
         # train loop
         model.train()
+        model_teacher.eval()
         metric_logger = context_stack.enter_context(
             MetricLogger(Path(args.dump_dir) / "metrics.jsonl", args)
         )
@@ -416,7 +462,15 @@ def train(args: TrainArgs):
                 ), "Probe model shouldn't have grads at this point"
 
             # loss = model(input_ids, labels)
-            loss = model(input_ids, labels, attn_impl=args.attn_impl)
+            
+            # attn control
+            # loss = model(input_ids, labels, attn_impl=args.attn_impl)
+            
+            # alternate loss
+            logits = model(input_ids, attn_impl=args.attn_impl)
+            with torch.no_grad():
+                logits_teacher = model_teacher(input_ids, attn_impl=args.attn_impl)
+            loss = soft_ce_plus_ent_loss(logits, logits_teacher)
 
             if args.grad_acc_steps > 1:
                 model.set_requires_gradient_sync(train_state.acc_step == 0)

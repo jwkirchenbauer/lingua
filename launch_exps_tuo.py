@@ -23,8 +23,8 @@ EXTRA_COMPILE_FLAGS = True
 # LOG_RECOMPILES=False
 LOG_RECOMPILES = True
 
-# QOS = "pdebug"
-QOS = "pbatch"
+QOS = "pdebug"
+# QOS = "pbatch"
 BANK = "effml"
 TIME_LIMIT = 29
 REPETITIONS = 1
@@ -39,7 +39,8 @@ DEPENDENCY = None
 
 BASE_OUT_DIR = f"/p/vast1/kirchenb/singleshot-root/lingua/outputs"
 
-BASE_RUN_NAME = f"test"
+# BASE_RUN_NAME = f"test"
+BASE_RUN_NAME = f"test_extra_model"
 
 WANDB_OFFLINE = False
 # WANDB_OFFLINE = True
@@ -53,9 +54,11 @@ GPN = 4
 exp_list = [
     # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, 1, 2, 4096],
     # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 4096],
-    ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 4096, "sdpa"],
-    ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 4096, "flex_attention"],
-    ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 2048, "flex_attention"],
+    # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 4096, "sdpa"],
+    # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 4096, "flex_attention"],
+    # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 2048, "flex_attention"],
+    # test second model cost
+    ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 1, 4096, "sdpa"],
 ]
 
 
