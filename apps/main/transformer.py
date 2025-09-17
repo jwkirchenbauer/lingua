@@ -160,6 +160,22 @@ def build_fsdp_grouping_plan(model_args: LMTransformerArgs):
 
     return group_plan
 
+# jwk: Similar func but aligned with the layer names for hf's Llama implementation
+from transformers import LlamaForCausalLM
+def build_fsdp_grouping_plan_hf_llama(model: LlamaForCausalLM):
+    group_plan: Tuple[int, bool] = []
+
+    # Grouping and output seperately
+    group_plan.append(("model.embed_tokens", False))
+
+    # Grouping by layers
+    for i in range(model.config.num_hidden_layers):
+        group_plan.append((f"model.layers.{i}", False))
+
+    group_plan.append(("lm_head", True))
+
+    return group_plan
+
 
 # Optional and only used for model/tensor parallelism when tp_size > 1
 def tp_parallelize(model, tp_mesh, model_args: LMTransformerArgs, distributed_args):

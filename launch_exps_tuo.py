@@ -5,8 +5,8 @@ from itertools import product, chain
 # LIST_CFGS = True
 LIST_CFGS = False
 
-# WRITE_ONLY = True
-WRITE_ONLY = False
+WRITE_ONLY = True
+# WRITE_ONLY = False
 
 LAUNCHER_FILEPATH = "/p/vast1/$USER/llnl-tools/launch_tuo.py"
 
@@ -40,7 +40,8 @@ DEPENDENCY = None
 BASE_OUT_DIR = f"/p/vast1/kirchenb/singleshot-root/lingua/outputs"
 
 # BASE_RUN_NAME = f"test"
-BASE_RUN_NAME = f"test_extra_model"
+# BASE_RUN_NAME = f"test_extra_model"
+BASE_RUN_NAME = f"test_ext_ckpt_impl"
 
 WANDB_OFFLINE = False
 # WANDB_OFFLINE = True
@@ -58,6 +59,9 @@ exp_list = [
     # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 4096, "flex_attention"],
     # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 2, 2048, "flex_attention"],
     # test second model cost
+    # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 1, 4096, "sdpa"],
+    # test external implementation and ckpt for teacher model
+    # ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, 1, 1, 4096, "sdpa"],
     ["apps.main.train", "apps/main/configs/llama_7B_fw_10bt_tuo.yaml", 1, GPN, 1, 4096, "sdpa"],
 ]
 

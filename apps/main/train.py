@@ -63,6 +63,7 @@ from apps.main.transformer import (
     LMTransformer,
     get_num_flop_per_token,
     build_fsdp_grouping_plan,
+    build_fsdp_grouping_plan_hf_llama,
     tp_parallelize,
     get_no_recompute_ops,
 )
@@ -235,8 +236,9 @@ def soft_label_cross_entropy(pred_logits, target_logits):
 @torch.compile
 def logit_entropy(logits):
     # BxLxV
-    probs = F.softmax(logits.flatten(end_dim=-2), -1) # (BxL)xV
-    H_p = torch.sum(xlogy(probs, torch.reciprocal(probs)), dim=-1) # (BxL)x1
+    p = F.softmax(logits.flatten(end_dim=-2), -1) # (BxL)xV
+    plogp = p * torch.log(p)
+    H_p = - 1.0 * torch.sum(plogp, dim=-1) # (BxL)x1
     H_p_bar = torch.mean(H_p) # 1x
     return H_p_bar
 
@@ -281,58 +283,79 @@ def train(args: TrainArgs):
         torch.manual_seed(args.seed)
         logger.info("Building model")
 
-        # Initializing Model in meta device allows us to initialize models much bigger than 1 gpu's memory
-        with torch.device("meta"):
-            model = LMTransformer(args.model)
-            model_teacher = LMTransformer(args.model)
-        logger.info("Model is built !")
+        # # # Initializing Model in meta device allows us to initialize models much bigger than 1 gpu's memory
+        # with torch.device("meta"):
+        #     model = LMTransformer(args.model)
+        #     # model_teacher = LMTransformer(args.model)
+        # logger.info("Model is built !")
+        
+        # while we would like the lower memory footprint of the metadevice based workflow
+        # we can't easily do this for the alt implm and pretrained weights
+        from transformers import LlamaForCausalLM
+        model_name_or_path = "meta-llama/Llama-3.1-8B"
+        # model_name_or_path = "meta-llama/Llama-3.2-3B"
+        model = LlamaForCausalLM.from_pretrained(model_name_or_path) # load from huggingface
+        model_teacher = LlamaForCausalLM.from_pretrained(model_name_or_path) # load from huggingface
 
         model_param_count = get_num_params(model)
         model_teacher_param_count = get_num_params(model_teacher)
 
+        if isinstance(model, LMTransformer):
+            model_fsdp_grp_plan = build_fsdp_grouping_plan(args.model)
+        elif isinstance(model, LlamaForCausalLM):
+            model_fsdp_grp_plan = build_fsdp_grouping_plan_hf_llama(model)
+        else:
+            raise "Not sure what kind of model this is, can't parallelize it"
         model = parallelize_model(
             model,
             world_mesh,
             args.model,
             args.distributed,
-            fsdp_grouping_plan=build_fsdp_grouping_plan(args.model),
+            # fsdp_grouping_plan=build_fsdp_grouping_plan(args.model),
+            fsdp_grouping_plan=model_fsdp_grp_plan,
             tp_parallelize=tp_parallelize,
             no_recompute_ops=get_no_recompute_ops(),
         )
+        
+        if isinstance(model_teacher, LMTransformer):
+            teacher_fsdp_grp_plan = build_fsdp_grouping_plan(args.model)
+        elif isinstance(model_teacher, LlamaForCausalLM):
+            teacher_fsdp_grp_plan = build_fsdp_grouping_plan_hf_llama(model_teacher)
+        else:
+            raise "Not sure what kind of teacher model this is, can't parallelize it"
         model_teacher = parallelize_model(
             model_teacher,
             world_mesh,
             args.model,
             args.distributed,
-            fsdp_grouping_plan=build_fsdp_grouping_plan(args.model),
+            fsdp_grouping_plan=teacher_fsdp_grp_plan,
             tp_parallelize=tp_parallelize,
             no_recompute_ops=get_no_recompute_ops(),
         )
+        # disable all teacher gradients
+        for param in model_teacher.parameters():
+            param.requires_grad = False
 
-        # Once we shard the model on different gpus we can actually initialize the model
-        # First we create empty tensors of the correct shapes
-        model = model.to_empty(device="cuda")
-        model_teacher = model_teacher.to_empty(device="cuda")
-        # Then we init the model. Please make sure this function initializes *ALL* parameters
-        # and buffers, otherwise you will have random values in the unitialized tensors
-        # which will silently fail (give nan gradients for example)
+        # # Once we shard the model on different gpus we can actually initialize the model
+        # # First we create empty tensors of the correct shapes
+        # model = model.to_empty(device="cuda")
+        # # model_teacher = model_teacher.to_empty(device="cuda")
+        # # Then we init the model. Please make sure this function initializes *ALL* parameters
+        # # and buffers, otherwise you will have random values in the unitialized tensors
+        # # which will silently fail (give nan gradients for example)
 
-        if args.checkpoint.init_ckpt_path:
-            logger.info(f"Loading initial model from {args.checkpoint.init_ckpt_path}")
-            load_from_checkpoint(args.checkpoint.init_ckpt_path, model, model_key="model") # Put model_key="" if its directly the model checkpoint
-            load_from_checkpoint(args.checkpoint.init_ckpt_path, model_teacher, model_key="model") # Put model_key="" if its directly the model checkpoint
-            model.rope_embeddings.reset_parameters() # For RoPe initialization since it's a buffer it might not be loaded
-            model_teacher.rope_embeddings.reset_parameters() # For RoPe initialization since it's a buffer it might not be loaded
-        else:
-            with torch.random.fork_rng(devices=[torch.cuda.current_device()]):
-                torch.manual_seed(args.model.seed)
-                model.init_weights()
-                model_teacher.init_weights()
-        check_model_value_range(model, range=10.0, std=1.0)
-        check_model_value_range(model_teacher, range=10.0, std=1.0)
-
+        # if args.checkpoint.init_ckpt_path:
+        #     logger.info(f"Loading initial model from {args.checkpoint.init_ckpt_path}")
+        #     load_from_checkpoint(args.checkpoint.init_ckpt_path, model, model_key="model") # Put model_key="" if its directly the model checkpoint
+        #     model.rope_embeddings.reset_parameters() # For RoPe initialization since it's a buffer it might not be loaded
+        # else:
+        #     with torch.random.fork_rng(devices=[torch.cuda.current_device()]):
+        #         torch.manual_seed(args.model.seed)
+        #         model.init_weights()
+        #         # model_teacher.init_weights()
+        # check_model_value_range(model, range=10.0, std=1.0)
+        
         # log model size
-
         logger.info(f"Model size: {model_param_count:,} total parameters")
         logger.info(f"Model teacher size: {model_teacher_param_count:,} total parameters")
 
@@ -463,13 +486,32 @@ def train(args: TrainArgs):
 
             # loss = model(input_ids, labels)
             
-            # attn control
+            # # attn control
             # loss = model(input_ids, labels, attn_impl=args.attn_impl)
+
+            # # single alternate model impl
+            # model_output = model(input_ids=input_ids, labels=labels)
+            # loss = model_output.loss
             
             # alternate loss
-            logits = model(input_ids, attn_impl=args.attn_impl)
+            from transformers.modeling_outputs import CausalLMOutputWithPast
+
+            # loss = model(input_ids=input_ids, labels=labels).loss
+
+            # logits = model(input_ids, attn_impl=args.attn_impl)
+            outputs = model(input_ids=input_ids)
+            if isinstance(outputs, CausalLMOutputWithPast): 
+                logits = outputs.logits
+            else:
+                logits = outputs
             with torch.no_grad():
-                logits_teacher = model_teacher(input_ids, attn_impl=args.attn_impl)
+                # outputs_teacher = model_teacher(input_ids, attn_impl=args.attn_impl)
+                outputs_teacher = model_teacher(input_ids=input_ids)
+                if isinstance(outputs_teacher, CausalLMOutputWithPast): 
+                    logits_teacher = outputs_teacher.logits.detach()
+                else:
+                    logits_teacher = outputs_teacher.detach()
+
             loss = soft_ce_plus_ent_loss(logits, logits_teacher)
 
             if args.grad_acc_steps > 1:
